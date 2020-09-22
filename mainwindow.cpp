@@ -7,16 +7,48 @@
 void MainWindow::addedTrack() {
     QPushButton* button = (QPushButton *) QObject::sender();
     playlistTracks.append(searchTracks[searchAddButtons->id(button)]);
-
     updatePlaylist();
 }
 
+void MainWindow::removedTrack() {
+    QPushButton* button = (QPushButton *) QObject::sender();
+    playlistTracks.remove(playlistPlayButtons->id(button));
+    updatePlaylist();
+}
+
+void MainWindow::playedTrack() {
+    QPushButton* button = (QPushButton *) QObject::sender();
+    Track* track = playlistTracks[playlistPlayButtons->id(button)];
+    player->setMedia(QUrl(track->url));
+    player->play();
+}
+
 void MainWindow::updatePlaylist() {
-    QLabel *nom = new QLabel();
     ui->tableWidget_2->setRowCount(playlistTracks.size());
-    foreach (Track* track, playlistTracks) {
-        nom->setText(track->name);
-        ui->tableWidget_2->setCellWidget(playlistTracks.size() - 1, 0, nom);
+    playlistPlayButtons = new QButtonGroup();
+    playlistRemoveButtons = new QButtonGroup();
+
+    for (int i=0; i<playlistTracks.size(); i++) {
+        // create track name label
+        QLabel *trackName = new QLabel();
+        trackName->setText(playlistTracks[i] -> name);
+
+        // create play button
+        QPushButton *playButton = new QPushButton("Play");
+        playlistPlayButtons->addButton(playButton);
+        playlistPlayButtons->setId(playButton, i);
+        connect(playButton, SIGNAL(clicked()), this, SLOT(playedTrack()));
+
+        // create remove button
+        QPushButton *removeButton = new QPushButton("-");
+        playlistPlayButtons->addButton(removeButton);
+        playlistPlayButtons->setId(removeButton, i);
+        connect(removeButton, SIGNAL(clicked()), this, SLOT(removedTrack()));
+
+        // render track name, play button and remove button
+        ui->tableWidget_2->setCellWidget(i, 0, trackName);
+        ui->tableWidget_2->setCellWidget(i, 1, playButton);
+        ui->tableWidget_2->setCellWidget(i, 2, removeButton);
     }
 }
 
@@ -29,15 +61,22 @@ void MainWindow::gotTracks(QNetworkReply *reply) {
     QJsonDocument jsonResponse = QJsonDocument::fromJson(strReply.toUtf8());
     QJsonArray json_array = jsonResponse["tracks"]["items"].toArray();
 
-    ui->tableWidget->setRowCount(json_array.size());
+    int size = 0;
+
+    foreach (const QJsonValue &value, json_array) {
+        QJsonObject json_obj = value.toObject();
+        if (!json_obj["preview_url"].isNull())
+            size++;
+    }
+
+    ui->tableWidget->setRowCount(size);
 
     int i = 0;
-    foreach (const QJsonValue &value, json_array) {
+    foreach (const QJsonValue value, json_array) {
         QJsonObject json_obj = value.toObject();
 
         if (json_obj["preview_url"].isNull())
             continue;
-
 
         QJsonArray artists = json_obj["artists"].toArray();
         QString listOfArtists = "";
@@ -73,6 +112,18 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->tableWidget->setSelectionMode(QAbstractItemView::NoSelection);
     ui->tableWidget->setColumnWidth(1,40);
+
+    header = ui->tableWidget_2->horizontalHeader();
+    header->setSectionResizeMode(QHeaderView::Stretch);
+    header->setSectionResizeMode(1, QHeaderView::Interactive);
+    header->setSectionResizeMode(2, QHeaderView::Interactive);
+
+    ui->tableWidget_2->setSelectionMode(QAbstractItemView::NoSelection);
+    ui->tableWidget_2->setColumnWidth(1,40);
+    ui->tableWidget_2->setColumnWidth(2,40);
+
+    player = new QMediaPlayer;
+    player->setVolume(50);
 //    ui->tableWidget->verticalHeader()->setVisible(false);
 }
 

@@ -33,13 +33,17 @@ private:
     QButtonGroup* searchAddButtons;
 
     QVector<Track*> playlistTracks;
-    QButtonGroup playlistPlayButtons;
-    QButtonGroup playlistAddButtons;
+    QButtonGroup* playlistPlayButtons;
+    QButtonGroup* playlistRemoveButtons;
+
+    QMediaPlayer *player;
     void updatePlaylist();
 
 private slots:
     void gotTracks(QNetworkReply*);
     void on_pushButton_clicked();
     void addedTrack();
+    void playedTrack();
+    void removedTrack();
 };
 #endif // MAINWINDOW_H
