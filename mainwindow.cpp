@@ -4,8 +4,27 @@
 #include <QLabel>
 #include <QDebug>
 
+void MainWindow::addedTrack() {
+    QPushButton* button = (QPushButton *) QObject::sender();
+    playlistTracks.append(searchTracks[searchAddButtons->id(button)]);
+
+    updatePlaylist();
+}
+
+void MainWindow::updatePlaylist() {
+    QLabel *nom = new QLabel();
+    ui->tableWidget_2->setRowCount(playlistTracks.size());
+    foreach (Track* track, playlistTracks) {
+        nom->setText(track->name);
+        ui->tableWidget_2->setCellWidget(playlistTracks.size() - 1, 0, nom);
+    }
+}
+
 void MainWindow::gotTracks(QNetworkReply *reply) {
     searchTracks.clear();
+    searchAddButtons = new QButtonGroup();
+    int buttonNumber = 0;
+
     QString strReply = (QString) reply->readAll();
     QJsonDocument jsonResponse = QJsonDocument::fromJson(strReply.toUtf8());
     QJsonArray json_array = jsonResponse["tracks"]["items"].toArray();
@@ -16,10 +35,10 @@ void MainWindow::gotTracks(QNetworkReply *reply) {
     foreach (const QJsonValue &value, json_array) {
         QJsonObject json_obj = value.toObject();
 
-        if (json_obj["preview_url"] == 0)
+        if (json_obj["preview_url"].isNull())
             continue;
 
-        searchTracks.push_back(json_obj["preview_url"].toString());
+
         QJsonArray artists = json_obj["artists"].toArray();
         QString listOfArtists = "";
         for (int i=0; i<artists.size(); i++) {
@@ -27,12 +46,18 @@ void MainWindow::gotTracks(QNetworkReply *reply) {
             listOfArtists += (artists[i].toObject())["name"].toString();
         }
         QLabel *nom = new QLabel();
-        nom->setText(QString(listOfArtists + " - " + json_obj["name"].toString()));
+        Track* track = new Track(listOfArtists + " - " + json_obj["name"].toString(),
+                json_obj["preview_url"].toString());
+        nom->setText(track->name);
+        searchTracks.push_back(track);
         ui->tableWidget->setCellWidget(i, 0, nom);
 
-        QPushButton *radio = new QPushButton("+");
-        radio->setFixedSize(20,20);
-        ui->tableWidget->setCellWidget(i++, 1, radio);
+        QPushButton *button = new QPushButton("+");
+        button->setFixedSize(20,20);
+        searchAddButtons->addButton(button);
+        searchAddButtons->setId(button, buttonNumber++);
+        connect(button, SIGNAL(clicked()), this, SLOT(addedTrack()));
+        ui->tableWidget->setCellWidget(i++, 1, button);
     }
 }
 

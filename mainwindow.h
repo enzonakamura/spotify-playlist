@@ -12,6 +12,8 @@
 #include <QtCore>
 #include <QtGui>
 #include <QDialog>
+#include <QButtonGroup>
+#include "track.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -27,10 +29,17 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    QVector<QString> searchTracks;
-    QVector<QString> playlistTracks;
+    QVector<Track*> searchTracks;
+    QButtonGroup* searchAddButtons;
+
+    QVector<Track*> playlistTracks;
+    QButtonGroup playlistPlayButtons;
+    QButtonGroup playlistAddButtons;
+    void updatePlaylist();
+
 private slots:
     void gotTracks(QNetworkReply*);
     void on_pushButton_clicked();
+    void addedTrack();
 };
 #endif // MAINWINDOW_H
