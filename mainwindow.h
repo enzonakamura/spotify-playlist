@@ -45,5 +45,7 @@ private slots:
     void addedTrack();
     void playedTrack();
     void removedTrack();
+    void on_pushButton_3_clicked();
+    void on_saveButton_clicked();
 };
 #endif // MAINWINDOW_H

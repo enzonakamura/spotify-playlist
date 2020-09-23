@@ -71,32 +71,31 @@ void MainWindow::gotTracks(QNetworkReply *reply) {
 
     ui->tableWidget->setRowCount(size);
 
-    int i = 0;
-    foreach (const QJsonValue value, json_array) {
-        QJsonObject json_obj = value.toObject();
+    for (int i=0; i<json_array.size(); i++) {
+        QJsonObject json_obj = json_array[i].toObject();
 
         if (json_obj["preview_url"].isNull())
             continue;
 
         QJsonArray artists = json_obj["artists"].toArray();
         QString listOfArtists = "";
-        for (int i=0; i<artists.size(); i++) {
-            if (i > 0) listOfArtists += ", ";
-            listOfArtists += (artists[i].toObject())["name"].toString();
+        for (int j=0; j<artists.size(); j++) {
+            if (j > 0) listOfArtists += ", ";
+            listOfArtists += (artists[j].toObject())["name"].toString();
         }
-        QLabel *nom = new QLabel();
+        QLabel *trackName = new QLabel();
         Track* track = new Track(listOfArtists + " - " + json_obj["name"].toString(),
                 json_obj["preview_url"].toString());
-        nom->setText(track->name);
+        trackName->setText(track->name);
         searchTracks.push_back(track);
-        ui->tableWidget->setCellWidget(i, 0, nom);
+        ui->tableWidget->setCellWidget(i, 0, trackName);
 
         QPushButton *button = new QPushButton("+");
         button->setFixedSize(20,20);
         searchAddButtons->addButton(button);
         searchAddButtons->setId(button, buttonNumber++);
         connect(button, SIGNAL(clicked()), this, SLOT(addedTrack()));
-        ui->tableWidget->setCellWidget(i++, 1, button);
+        ui->tableWidget->setCellWidget(i, 1, button);
     }
 }
 
@@ -156,9 +155,9 @@ void MainWindow::on_pushButton_clicked()
     request = QNetworkRequest((QUrl("https://api.spotify.com/v1/search?q=" + query + "&type=track")));
     request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     manager -> get(request);
+}
 
-    QMediaPlayer *player = new QMediaPlayer;
-    player->setMedia(QUrl("https://p.scdn.co/mp3-preview/f6437601ecdbf4f31b75875f0bc5184f4330b10a?cid=7082b77099e34142a4f016dcb7904d35"));
-    player->setVolume(50);
-//    player->play();
+void MainWindow::on_saveButton_clicked()
+{
+
 }
