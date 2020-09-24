@@ -242,7 +242,7 @@ void MainWindow::on_pushButton_clicked()
     QString query = ui -> textEdit_2 -> toPlainText();
     request = QNetworkRequest((QUrl("https://api.spotify.com/v1/search?q="
                                     + query
-                                    + "&type=track")));
+                                    + "&type=track&limit=50")));
     request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     manager -> get(request);
 }
