@@ -38,14 +38,19 @@ private:
 
     QMediaPlayer *player;
     void updatePlaylist();
+    void pauseToPlayButton(QPushButton* button);
+    void playToPauseButton(QPushButton* button);
+    bool isTrackLoaded(Track* track);
 
 private slots:
     void gotTracks(QNetworkReply*);
     void on_pushButton_clicked();
     void addedTrack();
     void playedTrack();
+    void pausedTrack();
     void removedTrack();
     void on_loadButton_clicked();
     void on_saveButton_clicked();
+    void updatePlaylistIfEndOfMedia();
 };
 #endif // MAINWINDOW_H

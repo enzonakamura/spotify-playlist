@@ -8,23 +8,80 @@
 
 void MainWindow::addedTrack() {
     QPushButton* button = (QPushButton *) QObject::sender();
+
+    foreach (Track* track, playlistTracks)
+        if (track->name == searchTracks[searchAddButtons->id(button)]->name)
+            return;
+
     playlistTracks.append(searchTracks[searchAddButtons->id(button)]);
     updatePlaylist();
 }
 
 void MainWindow::removedTrack() {
     QPushButton* button = (QPushButton *) QObject::sender();
-    player->setMedia(0);
-    playlistTracks.remove(playlistPlayButtons->id(button));
+
+    int id = playlistRemoveButtons->id(button);
+
+    if (isTrackLoaded(playlistTracks[id]))
+        player->setMedia(0);
+
+    playlistTracks.remove(playlistRemoveButtons->id(button));
+
     updatePlaylist();
+}
+
+// changes a button from Pause to Play
+void MainWindow::pauseToPlayButton(QPushButton* button) {
+    button->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+    disconnect(button, SIGNAL(clicked()), this, SLOT(pausedTrack()));
+    connect(button, SIGNAL(clicked()), this, SLOT(playedTrack()));
+}
+
+// changes a button from Play to Pause
+void MainWindow::playToPauseButton(QPushButton* button) {
+    button->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
+    disconnect(button, SIGNAL(clicked()), this, SLOT(playedTrack()));
+    connect(button, SIGNAL(clicked()), this, SLOT(pausedTrack()));
 }
 
 void MainWindow::playedTrack() {
     QPushButton* button = (QPushButton *) QObject::sender();
+    playToPauseButton(button);
 
     Track* track = playlistTracks[playlistPlayButtons->id(button)];
-    player->setMedia(QUrl(track->url));
+
+    if (player->mediaStatus() == player->NoMedia) {
+        player->setMedia(QUrl(track->url));
+    } else {
+        if (!isTrackLoaded(track)) {
+            player->setMedia(QUrl(track->url));
+
+            // reset other icons
+            foreach (QAbstractButton* playButton, playlistPlayButtons->buttons())
+                if ((QPushButton*) playButton != button)
+                    pauseToPlayButton((QPushButton*) playButton);
+        }
+    }
+
     player->play();
+}
+
+bool MainWindow::isTrackLoaded(Track* track) {
+    return player->mediaStatus() != QMediaPlayer::NoMedia
+            && player->mediaStatus() != QMediaPlayer::EndOfMedia
+            && player->media() == QMediaContent(QUrl(track->url));
+}
+
+void MainWindow::pausedTrack() {
+    QPushButton* button = (QPushButton *) QObject::sender();
+    player->pause();
+    pauseToPlayButton(button);
+}
+
+void MainWindow::updatePlaylistIfEndOfMedia() {
+    qInfo() << player->mediaStatus();
+    if (player->mediaStatus() == player->EndOfMedia)
+        updatePlaylist();
 }
 
 void MainWindow::updatePlaylist() {
@@ -39,15 +96,21 @@ void MainWindow::updatePlaylist() {
 
         // create play button
         QPushButton *playButton = new QPushButton();
-        playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
         playlistPlayButtons->addButton(playButton);
         playlistPlayButtons->setId(playButton, i);
-        connect(playButton, SIGNAL(clicked()), this, SLOT(playedTrack()));
+
+        if (isTrackLoaded(playlistTracks[i])) {
+            playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
+            connect(playButton, SIGNAL(clicked()), this, SLOT(pausedTrack()));
+        } else {
+            playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+            connect(playButton, SIGNAL(clicked()), this, SLOT(playedTrack()));
+        }
 
         // create remove button
         QPushButton *removeButton = new QPushButton("-");
-        playlistPlayButtons->addButton(removeButton);
-        playlistPlayButtons->setId(removeButton, i);
+        playlistRemoveButtons->addButton(removeButton);
+        playlistRemoveButtons->setId(removeButton, i);
         connect(removeButton, SIGNAL(clicked()), this, SLOT(removedTrack()));
 
         // render track name, play button and remove button
@@ -66,15 +129,15 @@ void MainWindow::gotTracks(QNetworkReply *reply) {
     QJsonDocument jsonResponse = QJsonDocument::fromJson(strReply.toUtf8());
     QJsonArray json_array = jsonResponse["tracks"]["items"].toArray();
 
-    int size = 0;
+    int numberOfTracks = 0;
 
     foreach (const QJsonValue &value, json_array) {
         QJsonObject json_obj = value.toObject();
         if (!json_obj["preview_url"].isNull())
-            size++;
+            numberOfTracks++;
     }
 
-    ui->tableWidget->setRowCount(size);
+    ui->tableWidget->setRowCount(numberOfTracks);
 
     int i = 0;
     foreach (QJsonValue js, json_array) {
@@ -132,6 +195,11 @@ MainWindow::MainWindow(QWidget *parent)
     player->setVolume(50);
     ui->tableWidget->verticalHeader()->setVisible(false);
     ui->tableWidget_2->verticalHeader()->setVisible(false);
+
+    connect(player,
+            SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)),
+            this,
+            SLOT(updatePlaylistIfEndOfMedia()));
 }
 
 MainWindow::~MainWindow()
