@@ -97,7 +97,7 @@
    <widget class="QPushButton" name="loadButton">
     <property name="geometry">
      <rect>
-      <x>310</x>
+      <x>150</x>
       <y>270</y>
       <width>91</width>
       <height>31</height>
@@ -113,7 +113,7 @@
    <widget class="QPushButton" name="saveButton">
     <property name="geometry">
      <rect>
-      <x>170</x>
+      <x>40</x>
       <y>270</y>
       <width>80</width>
       <height>31</height>
@@ -129,14 +129,46 @@
    <widget class="QCheckBox" name="autoplay">
     <property name="geometry">
      <rect>
-      <x>460</x>
-      <y>280</y>
+      <x>280</x>
+      <y>270</y>
       <width>101</width>
       <height>22</height>
      </rect>
     </property>
     <property name="text">
      <string>AUTOPLAY</string>
+    </property>
+   </widget>
+   <widget class="QSlider" name="volume">
+    <property name="geometry">
+     <rect>
+      <x>410</x>
+      <y>280</y>
+      <width>160</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="maximum">
+     <number>100</number>
+    </property>
+    <property name="sliderPosition">
+     <number>50</number>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>470</x>
+      <y>260</y>
+      <width>58</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Volume</string>
     </property>
    </widget>
   </widget>

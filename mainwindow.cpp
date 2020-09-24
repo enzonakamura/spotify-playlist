@@ -301,3 +301,9 @@ void MainWindow::on_loadButton_clicked()
 
     updatePlaylist();
 }
+
+
+void MainWindow::on_volume_actionTriggered()
+{
+    player->setVolume(ui->volume->value());
+}
