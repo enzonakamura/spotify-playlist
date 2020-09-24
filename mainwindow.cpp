@@ -79,9 +79,18 @@ void MainWindow::pausedTrack() {
 }
 
 void MainWindow::updatePlaylistIfEndOfMedia() {
-    qInfo() << player->mediaStatus();
-    if (player->mediaStatus() == player->EndOfMedia)
+    if (player->mediaStatus() == player->EndOfMedia) {
+        if (ui->autoplay->checkState() != 0)
+            for (int i=0; i<playlistTracks.size(); i++)
+                if (player->media() == QMediaContent(QUrl(playlistTracks[i]->url))
+                    && i != playlistTracks.size() - 1) {
+                    player->setMedia(QUrl(playlistTracks[i+1]->url));
+                    player->play();
+                    break;
+                }
+
         updatePlaylist();
+    }
 }
 
 void MainWindow::updatePlaylist() {
