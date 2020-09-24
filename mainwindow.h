@@ -49,7 +49,7 @@ private slots:
     void playedTrack();
     void pausedTrack();
     void removedTrack();
-    void on_loadButton_clicked();
+    void on_openButton_clicked();
     void on_saveButton_clicked();
     void updatePlaylistIfEndOfMedia();
     void on_volume_actionTriggered();

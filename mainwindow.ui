@@ -94,7 +94,7 @@
      </property>
     </column>
    </widget>
-   <widget class="QPushButton" name="loadButton">
+   <widget class="QPushButton" name="openButton">
     <property name="geometry">
      <rect>
       <x>170</x>
@@ -107,7 +107,7 @@
      <string>Load a playlist</string>
     </property>
     <property name="text">
-     <string>Load</string>
+     <string>Open</string>
     </property>
    </widget>
    <widget class="QPushButton" name="saveButton">

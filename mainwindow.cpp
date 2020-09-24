@@ -184,6 +184,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    ui->saveButton->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
+    ui->openButton->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
+
     QHeaderView *header = ui->tableWidget->horizontalHeader();
     header->setSectionResizeMode(QHeaderView::Stretch);
     header->setSectionResizeMode(1, QHeaderView::Interactive);
@@ -273,7 +276,7 @@ void MainWindow::on_saveButton_clicked()
     }
 }
 
-void MainWindow::on_loadButton_clicked()
+void MainWindow::on_openButton_clicked()
 {
     QString fileName = QFileDialog::getOpenFileName(this,
             tr("Open Spotify Playlist"), "",
