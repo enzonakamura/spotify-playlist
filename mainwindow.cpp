@@ -3,6 +3,8 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QDebug>
+#include <QFileDialog>
+#include <QMessageBox>
 
 void MainWindow::addedTrack() {
     QPushButton* button = (QPushButton *) QObject::sender();
@@ -34,7 +36,8 @@ void MainWindow::updatePlaylist() {
         trackName->setText(playlistTracks[i] -> name);
 
         // create play button
-        QPushButton *playButton = new QPushButton("Play");
+        QPushButton *playButton = new QPushButton();
+        playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
         playlistPlayButtons->addButton(playButton);
         playlistPlayButtons->setId(playButton, i);
         connect(playButton, SIGNAL(clicked()), this, SLOT(playedTrack()));
@@ -71,8 +74,9 @@ void MainWindow::gotTracks(QNetworkReply *reply) {
 
     ui->tableWidget->setRowCount(size);
 
-    for (int i=0; i<json_array.size(); i++) {
-        QJsonObject json_obj = json_array[i].toObject();
+    int i = 0;
+    foreach (QJsonValue js, json_array) {
+        QJsonObject json_obj = js.toObject();
 
         if (json_obj["preview_url"].isNull())
             continue;
@@ -84,8 +88,9 @@ void MainWindow::gotTracks(QNetworkReply *reply) {
             listOfArtists += (artists[j].toObject())["name"].toString();
         }
         QLabel *trackName = new QLabel();
-        Track* track = new Track(listOfArtists + " - " + json_obj["name"].toString(),
-                json_obj["preview_url"].toString());
+        Track* track = new Track(
+                    listOfArtists + " - " + json_obj["name"].toString(),
+                    json_obj["preview_url"].toString());
         trackName->setText(track->name);
         searchTracks.push_back(track);
         ui->tableWidget->setCellWidget(i, 0, trackName);
@@ -95,7 +100,7 @@ void MainWindow::gotTracks(QNetworkReply *reply) {
         searchAddButtons->addButton(button);
         searchAddButtons->setId(button, buttonNumber++);
         connect(button, SIGNAL(clicked()), this, SLOT(addedTrack()));
-        ui->tableWidget->setCellWidget(i, 1, button);
+        ui->tableWidget->setCellWidget(i++, 1, button);
     }
 }
 
@@ -123,7 +128,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     player = new QMediaPlayer;
     player->setVolume(50);
-//    ui->tableWidget->verticalHeader()->setVisible(false);
+    ui->tableWidget->verticalHeader()->setVisible(false);
+    ui->tableWidget_2->verticalHeader()->setVisible(false);
 }
 
 MainWindow::~MainWindow()
@@ -149,15 +155,70 @@ void MainWindow::on_pushButton_clicked()
     QJsonDocument jsonDocument = QJsonDocument::fromJson(reply->readAll());
     QString token = jsonDocument["access_token"].toString();
 
-    connect(manager, &QNetworkAccessManager::finished, this, &MainWindow::gotTracks);
+    connect(manager,
+            &QNetworkAccessManager::finished,
+            this,
+            &MainWindow::gotTracks);
 
     QString query = ui -> textEdit_2 -> toPlainText();
-    request = QNetworkRequest((QUrl("https://api.spotify.com/v1/search?q=" + query + "&type=track")));
+    request = QNetworkRequest((QUrl("https://api.spotify.com/v1/search?q="
+                                    + query
+                                    + "&type=track")));
     request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     manager -> get(request);
 }
 
 void MainWindow::on_saveButton_clicked()
 {
+    QString fileName = QFileDialog::getSaveFileName(this,
+            tr("Open Spotify Playlist"), "",
+            tr("All Files (*)"));
 
+    if (fileName.isEmpty())
+        return;
+    else {
+        QFile file(fileName);
+        if (!file.open(QIODevice::WriteOnly)) {
+            QMessageBox::information(this,
+                                     tr("Unable to open file"),
+                                     file.errorString());
+            return;
+        }
+
+        QTextStream out(&file);
+
+        foreach (Track* track, playlistTracks)
+            out << track->name << ";" << track->url << "\n";
+
+        file.close();
+    }
+}
+
+void MainWindow::on_loadButton_clicked()
+{
+    QString fileName = QFileDialog::getOpenFileName(this,
+            tr("Open Spotify Playlist"), "",
+            tr("All Files (*)"));
+
+    if (fileName.isEmpty())
+        return;
+
+    QFile file(fileName);
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::information(this, tr("Unable to open file"),
+            file.errorString());
+        return;
+    }
+
+    QTextStream in(&file);
+
+    playlistTracks.clear();
+
+    while (!in.atEnd()) {
+        QStringList list = in.readLine().split(";");
+        playlistTracks.append(new Track(list[0], list[1]));
+    }
+
+    updatePlaylist();
 }
