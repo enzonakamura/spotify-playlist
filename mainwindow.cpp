@@ -14,12 +14,14 @@ void MainWindow::addedTrack() {
 
 void MainWindow::removedTrack() {
     QPushButton* button = (QPushButton *) QObject::sender();
+    player->setMedia(0);
     playlistTracks.remove(playlistPlayButtons->id(button));
     updatePlaylist();
 }
 
 void MainWindow::playedTrack() {
     QPushButton* button = (QPushButton *) QObject::sender();
+
     Track* track = playlistTracks[playlistPlayButtons->id(button)];
     player->setMedia(QUrl(track->url));
     player->play();
