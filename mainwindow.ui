@@ -142,9 +142,9 @@
    <widget class="QSlider" name="volume">
     <property name="geometry">
      <rect>
-      <x>430</x>
+      <x>470</x>
       <y>330</y>
-      <width>160</width>
+      <width>101</width>
       <height>16</height>
      </rect>
     </property>
@@ -169,6 +169,19 @@
     </property>
     <property name="text">
      <string>Volume</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="volumeIcon">
+    <property name="geometry">
+     <rect>
+      <x>440</x>
+      <y>330</y>
+      <width>21</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
     </property>
    </widget>
   </widget>

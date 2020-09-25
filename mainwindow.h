@@ -52,6 +52,6 @@ private slots:
     void on_openButton_clicked();
     void on_saveButton_clicked();
     void updatePlaylistIfEndOfMedia();
-    void on_volume_actionTriggered();
+    void on_volume_valueChanged(int value);
 };
 #endif // MAINWINDOW_H

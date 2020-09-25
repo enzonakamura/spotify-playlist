@@ -212,6 +212,8 @@ MainWindow::MainWindow(QWidget *parent)
             SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)),
             this,
             SLOT(updatePlaylistIfEndOfMedia()));
+
+    ui->volumeIcon->setPixmap(style()->standardIcon(QStyle::SP_MediaVolume).pixmap(20));
 }
 
 MainWindow::~MainWindow()
@@ -305,8 +307,13 @@ void MainWindow::on_openButton_clicked()
     updatePlaylist();
 }
 
-
-void MainWindow::on_volume_actionTriggered()
+void MainWindow::on_volume_valueChanged(int value)
 {
     player->setVolume(ui->volume->value());
+    QIcon icon;
+    if (value == 0)
+        icon = style()->standardIcon(QStyle::SP_MediaVolumeMuted);
+    else
+        icon = style()->standardIcon(QStyle::SP_MediaVolume);
+    ui->volumeIcon->setPixmap(icon.pixmap(20));
 }
