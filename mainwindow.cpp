@@ -117,9 +117,10 @@ void MainWindow::updatePlaylist() {
         }
 
         // create remove button
-        QPushButton *removeButton = new QPushButton("-");
+        QPushButton *removeButton = new QPushButton();
         playlistRemoveButtons->addButton(removeButton);
         playlistRemoveButtons->setId(removeButton, i);
+        removeButton->setIcon(style()->standardIcon(QStyle::SP_DialogDiscardButton));
         connect(removeButton, SIGNAL(clicked()), this, SLOT(removedTrack()));
 
         // render track name, play button and remove button
@@ -144,6 +145,13 @@ void MainWindow::gotTracks(QNetworkReply *reply) {
         QJsonObject json_obj = value.toObject();
         if (!json_obj["preview_url"].isNull())
             numberOfTracks++;
+    }
+
+    if (numberOfTracks == 0) {
+        ui->tableWidget->setRowCount(1);
+        ui->tableWidget->setCellWidget(0, 0, new QLabel("No results found for \""
+                                                + ui->searchBar->text() + "\""));
+        return;
     }
 
     ui->tableWidget->setRowCount(numberOfTracks);
@@ -244,9 +252,8 @@ void MainWindow::on_pushButton_clicked()
             this,
             &MainWindow::gotTracks);
 
-    QString query = ui -> textEdit_2 -> toPlainText();
     request = QNetworkRequest((QUrl("https://api.spotify.com/v1/search?q="
-                                    + query
+                                    + ui->searchBar->text()
                                     + "&type=track&limit=50")));
     request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     manager -> get(request);
@@ -314,4 +321,9 @@ void MainWindow::on_volume_valueChanged(int value)
     else
         icon = style()->standardIcon(QStyle::SP_MediaVolume);
     ui->volumeIcon->setPixmap(icon.pixmap(20));
+}
+
+void MainWindow::on_searchBar_returnPressed()
+{
+    on_pushButton_clicked();
 }
