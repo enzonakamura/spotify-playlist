@@ -272,7 +272,7 @@ void MainWindow::on_saveButton_clicked()
         QTextStream out(&file);
 
         foreach (Track* track, playlistTracks)
-            out << track->name << ";" << track->url << "\n";
+            out << track->name << "\n" << track->url << "\n";
 
         file.close();
     }
@@ -299,10 +299,8 @@ void MainWindow::on_openButton_clicked()
 
     playlistTracks.clear();
 
-    while (!in.atEnd()) {
-        QStringList list = in.readLine().split(";");
-        playlistTracks.append(new Track(list[0], list[1]));
-    }
+    while (!in.atEnd())
+        playlistTracks.append(new Track(in.readLine(), in.readLine()));
 
     updatePlaylist();
 }
