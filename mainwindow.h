@@ -44,7 +44,7 @@ private:
 
 private slots:
     void gotTracks(QNetworkReply*);
-    void on_pushButton_clicked();
+    void on_searchButton_clicked();
     void addedTrack();
     void playedTrack();
     void pausedTrack();

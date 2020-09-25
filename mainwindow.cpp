@@ -229,7 +229,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::on_searchButton_clicked()
 {
     QEventLoop loop;
     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
@@ -243,7 +243,14 @@ void MainWindow::on_pushButton_clicked()
     QByteArray postData = payload.query(QUrl::FullyEncoded).toUtf8();
     QNetworkReply *reply = manager->post(request, postData);
 
+    // Display "Loading..."
+    ui->tableWidget->clearContents();
+    ui->tableWidget->setRowCount(1);
+    ui->tableWidget->setCellWidget(0, 0, new QLabel("Loading..."));
+
+    // Loop to wait for the reply
     loop.exec();
+
     QJsonDocument jsonDocument = QJsonDocument::fromJson(reply->readAll());
     QString token = jsonDocument["access_token"].toString();
 
@@ -325,5 +332,5 @@ void MainWindow::on_volume_valueChanged(int value)
 
 void MainWindow::on_searchBar_returnPressed()
 {
-    on_pushButton_clicked();
+    on_searchButton_clicked();
 }
