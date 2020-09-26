@@ -22,8 +22,17 @@ void MainWindow::removedTrack() {
 
     int id = playlistRemoveButtons->id(button);
 
-    if (isTrackLoaded(playlistTracks[id]))
+    if (isTrackLoaded(playlistTracks[id])) {
+        if (searchTracks.size() > 0)
+            foreach (QAbstractButton* playButton, searchPlayButtons->buttons()) {
+                int idButtonOnSearch = searchPlayButtons->id(playButton);
+
+                if (isTrackLoaded(searchTracks[idButtonOnSearch]))
+                    pauseToPlayButtonFromSearch((QPushButton*) playButton);
+            }
+
         player->setMedia(0);
+    }
 
     playlistTracks.remove(playlistRemoveButtons->id(button));
 
@@ -37,11 +46,23 @@ void MainWindow::pauseToPlayButton(QPushButton* button) {
     connect(button, SIGNAL(clicked()), this, SLOT(playedTrack()));
 }
 
+void MainWindow::pauseToPlayButtonFromSearch(QPushButton* button) {
+    button->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+    disconnect(button, SIGNAL(clicked()), this, SLOT(pausedTrackFromSearch()));
+    connect(button, SIGNAL(clicked()), this, SLOT(playedTrackFromSearch()));
+}
+
 // changes a button from Play to Pause
 void MainWindow::playToPauseButton(QPushButton* button) {
     button->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
     disconnect(button, SIGNAL(clicked()), this, SLOT(playedTrack()));
     connect(button, SIGNAL(clicked()), this, SLOT(pausedTrack()));
+}
+
+void MainWindow::playToPauseButtonFromSearch(QPushButton* button) {
+    button->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
+    disconnect(button, SIGNAL(clicked()), this, SLOT(playedTrackFromSearch()));
+    connect(button, SIGNAL(clicked()), this, SLOT(pausedTrackFromSearch()));
 }
 
 void MainWindow::playedTrack() {
@@ -60,6 +81,67 @@ void MainWindow::playedTrack() {
             foreach (QAbstractButton* playButton, playlistPlayButtons->buttons())
                 if ((QPushButton*) playButton != button)
                     pauseToPlayButton((QPushButton*) playButton);
+
+            if (searchTracks.size() > 0) {
+                foreach (QAbstractButton* playButton, searchPlayButtons->buttons()) {
+                    int id = searchPlayButtons->id(playButton);
+
+                    if (track->name == searchTracks[id]->name)
+                        playToPauseButtonFromSearch((QPushButton*) playButton);
+                    else
+                        pauseToPlayButtonFromSearch((QPushButton*) playButton);
+                }
+            }
+        } else {
+            if (searchTracks.size() > 0) {
+                foreach (QAbstractButton* playButton, searchPlayButtons->buttons()) {
+                    int id = searchPlayButtons->id(playButton);
+                    if (searchTracks[id]->name == track->name)
+                        playToPauseButtonFromSearch((QPushButton*) playButton);
+                }
+            }
+        }
+    }
+
+    player->play();
+}
+
+void MainWindow::playedTrackFromSearch() {
+    QPushButton* button = (QPushButton *) QObject::sender();
+    playToPauseButtonFromSearch(button);
+
+    Track* track = searchTracks[searchPlayButtons->id(button)];
+
+    if (player->mediaStatus() == player->NoMedia) {
+        player->setMedia(QUrl(track->url));
+    } else {
+        if (!isTrackLoaded(track)) {
+            player->setMedia(QUrl(track->url));
+
+            // reset other icons
+            foreach (QAbstractButton* playButton, searchPlayButtons->buttons()) {
+                if ((QPushButton*) playButton != button)
+                    pauseToPlayButtonFromSearch((QPushButton*) playButton);
+            }
+
+            if (playlistTracks.size() > 0) {
+                foreach (QAbstractButton* playButton, playlistPlayButtons->buttons()) {
+                    int id = playlistPlayButtons->id(playButton);
+
+                    if (track->name == playlistTracks[id]->name)
+                        playToPauseButton((QPushButton*) playButton);
+                    else
+                        pauseToPlayButton((QPushButton*) playButton);
+                }
+            }
+        } else {
+            if (playlistTracks.size() > 0) {
+                foreach (QAbstractButton* playButton, playlistPlayButtons->buttons()) {
+                    int id = playlistPlayButtons->id(playButton);
+                    if (playlistTracks[id]->name == track->name)
+                        playToPauseButton((QPushButton*) playButton);
+                }
+            }
         }
     }
 
@@ -76,6 +158,32 @@ void MainWindow::pausedTrack() {
     QPushButton* button = (QPushButton *) QObject::sender();
     player->pause();
     pauseToPlayButton(button);
+
+    Track* track = playlistTracks[playlistPlayButtons->id(button)];
+
+    if (searchTracks.size() > 0) {
+        foreach (QAbstractButton* playButton, searchPlayButtons->buttons()) {
+            int id = searchPlayButtons->id(playButton);
+            if (searchTracks[id]->name == track->name)
+                pauseToPlayButtonFromSearch((QPushButton*) playButton);
+        }
+    }
+}
+
+void MainWindow::pausedTrackFromSearch() {
+    QPushButton* button = (QPushButton *) QObject::sender();
+    player->pause();
+    pauseToPlayButtonFromSearch(button);
+
+    Track* track = searchTracks[searchPlayButtons->id(button)];
+
+    if (playlistTracks.size() > 0) {
+        foreach (QAbstractButton* playButton, playlistPlayButtons->buttons()) {
+            int id = playlistPlayButtons->id(playButton);
+            if (playlistTracks[id]->name == track->name)
+                pauseToPlayButton((QPushButton*) playButton);
+        }
+    }
 }
 
 void MainWindow::updatePlaylistIfEndOfMedia() {
@@ -94,7 +202,7 @@ void MainWindow::updatePlaylistIfEndOfMedia() {
 }
 
 void MainWindow::updatePlaylist() {
-    ui->tableWidget_2->setRowCount(playlistTracks.size());
+    ui->playlistTable->setRowCount(playlistTracks.size());
     playlistPlayButtons = new QButtonGroup();
     playlistRemoveButtons = new QButtonGroup();
 
@@ -124,15 +232,16 @@ void MainWindow::updatePlaylist() {
         connect(removeButton, SIGNAL(clicked()), this, SLOT(removedTrack()));
 
         // render track name, play button and remove button
-        ui->tableWidget_2->setCellWidget(i, 0, trackName);
-        ui->tableWidget_2->setCellWidget(i, 1, playButton);
-        ui->tableWidget_2->setCellWidget(i, 2, removeButton);
+        ui->playlistTable->setCellWidget(i, 0, trackName);
+        ui->playlistTable->setCellWidget(i, 1, playButton);
+        ui->playlistTable->setCellWidget(i, 2, removeButton);
     }
 }
 
 void MainWindow::gotTracks(QNetworkReply *reply) {
     searchTracks.clear();
     searchAddButtons = new QButtonGroup();
+    searchPlayButtons = new QButtonGroup();
     int buttonNumber = 0;
 
     QString strReply = (QString) reply->readAll();
@@ -148,13 +257,13 @@ void MainWindow::gotTracks(QNetworkReply *reply) {
     }
 
     if (numberOfTracks == 0) {
-        ui->tableWidget->setRowCount(1);
-        ui->tableWidget->setCellWidget(0, 0, new QLabel("No results found for \""
+        ui->searchTable->setRowCount(1);
+        ui->searchTable->setCellWidget(0, 0, new QLabel("No results found for \""
                                                 + ui->searchBar->text() + "\""));
         return;
     }
 
-    ui->tableWidget->setRowCount(numberOfTracks);
+    ui->searchTable->setRowCount(numberOfTracks);
 
     int i = 0;
     foreach (QJsonValue js, json_array) {
@@ -175,14 +284,22 @@ void MainWindow::gotTracks(QNetworkReply *reply) {
                     json_obj["preview_url"].toString());
         trackName->setText(track->name);
         searchTracks.push_back(track);
-        ui->tableWidget->setCellWidget(i, 0, trackName);
+        ui->searchTable->setCellWidget(i, 0, trackName);
+
+        QPushButton *playButton = new QPushButton();
+        playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+        searchPlayButtons->addButton(playButton);
+        searchPlayButtons->setId(playButton, buttonNumber);
+        connect(playButton, SIGNAL(clicked()), this, SLOT(playedTrackFromSearch()));
+        ui->searchTable->setCellWidget(i, 1, playButton);
 
         QPushButton *button = new QPushButton("+");
-        button->setFixedSize(20,20);
+        button->setStyleSheet("font-weight: bold");
+//        button->setFixedSize(25,25);
         searchAddButtons->addButton(button);
         searchAddButtons->setId(button, buttonNumber++);
         connect(button, SIGNAL(clicked()), this, SLOT(addedTrack()));
-        ui->tableWidget->setCellWidget(i++, 1, button);
+        ui->searchTable->setCellWidget(i++, 2, button);
     }
 }
 
@@ -195,26 +312,28 @@ MainWindow::MainWindow(QWidget *parent)
     ui->saveButton->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
     ui->openButton->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
 
-    QHeaderView *header = ui->tableWidget->horizontalHeader();
-    header->setSectionResizeMode(QHeaderView::Stretch);
-    header->setSectionResizeMode(1, QHeaderView::Interactive);
-
-    ui->tableWidget->setSelectionMode(QAbstractItemView::NoSelection);
-    ui->tableWidget->setColumnWidth(1,40);
-
-    header = ui->tableWidget_2->horizontalHeader();
+    QHeaderView *header = ui->searchTable->horizontalHeader();
     header->setSectionResizeMode(QHeaderView::Stretch);
     header->setSectionResizeMode(1, QHeaderView::Interactive);
     header->setSectionResizeMode(2, QHeaderView::Interactive);
 
-    ui->tableWidget_2->setSelectionMode(QAbstractItemView::NoSelection);
-    ui->tableWidget_2->setColumnWidth(1,40);
-    ui->tableWidget_2->setColumnWidth(2,40);
+    ui->searchTable->setSelectionMode(QAbstractItemView::NoSelection);
+    ui->searchTable->setColumnWidth(1,40);
+    ui->searchTable->setColumnWidth(2,40);
+
+    header = ui->playlistTable->horizontalHeader();
+    header->setSectionResizeMode(QHeaderView::Stretch);
+    header->setSectionResizeMode(1, QHeaderView::Interactive);
+    header->setSectionResizeMode(2, QHeaderView::Interactive);
+
+    ui->playlistTable->setSelectionMode(QAbstractItemView::NoSelection);
+    ui->playlistTable->setColumnWidth(1,40);
+    ui->playlistTable->setColumnWidth(2,40);
 
     player = new QMediaPlayer;
     player->setVolume(50);
-    ui->tableWidget->verticalHeader()->setVisible(false);
-    ui->tableWidget_2->verticalHeader()->setVisible(false);
+    ui->searchTable->verticalHeader()->setVisible(false);
+    ui->playlistTable->verticalHeader()->setVisible(false);
 
     connect(player,
             SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)),
@@ -244,9 +363,9 @@ void MainWindow::on_searchButton_clicked()
     QNetworkReply *reply = manager->post(request, postData);
 
     // Display "Loading..."
-    ui->tableWidget->clearContents();
-    ui->tableWidget->setRowCount(1);
-    ui->tableWidget->setCellWidget(0, 0, new QLabel("Loading..."));
+    ui->searchTable->clearContents();
+    ui->searchTable->setRowCount(1);
+    ui->searchTable->setCellWidget(0, 0, new QLabel("Loading..."));
 
     // Loop to wait for the reply
     loop.exec();

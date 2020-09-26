@@ -31,15 +31,21 @@ private:
     Ui::MainWindow *ui;
     QVector<Track*> searchTracks;
     QButtonGroup* searchAddButtons;
+    QButtonGroup* searchPlayButtons;
 
     QVector<Track*> playlistTracks;
     QButtonGroup* playlistPlayButtons;
     QButtonGroup* playlistRemoveButtons;
 
     QMediaPlayer *player;
+
     void updatePlaylist();
     void pauseToPlayButton(QPushButton* button);
+    void pauseToPlayButtonFromSearch(QPushButton* button);
+
     void playToPauseButton(QPushButton* button);
+    void playToPauseButtonFromSearch(QPushButton* button);
+
     bool isTrackLoaded(Track* track);
 
 private slots:
@@ -47,6 +53,8 @@ private slots:
     void on_searchButton_clicked();
     void addedTrack();
     void playedTrack();
+    void playedTrackFromSearch();
+    void pausedTrackFromSearch();
     void pausedTrack();
     void removedTrack();
     void on_openButton_clicked();
