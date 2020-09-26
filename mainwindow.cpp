@@ -321,10 +321,17 @@ void MainWindow::gotTracks(QNetworkReply *reply) {
         ui->searchTable->setCellWidget(i, 0, trackName);
 
         QPushButton *playButton = new QPushButton();
-        playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+
+        if (!isTrackLoaded(track)) {
+            playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+            connect(playButton, SIGNAL(clicked()), this, SLOT(playedTrackFromSearch()));
+        } else {
+            playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
+            connect(playButton, SIGNAL(clicked()), this, SLOT(pausedTrackFromSearch()));
+        }
+
         searchPlayButtons->addButton(playButton);
         searchPlayButtons->setId(playButton, buttonNumber);
-        connect(playButton, SIGNAL(clicked()), this, SLOT(playedTrackFromSearch()));
         ui->searchTable->setCellWidget(i, 1, playButton);
 
         QPushButton *button = new QPushButton("+");
@@ -385,7 +392,18 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_searchButton_clicked()
 {
-    player->setMedia(0);
+    bool trackPlayingNotOnPlaylist = true;
+
+    if (playlistTracks.size() > 0)
+        foreach (QAbstractButton* playButton, playlistPlayButtons->buttons()) {
+            int idButtonOnSearch = playlistPlayButtons->id(playButton);
+            if (isTrackLoaded(playlistTracks[idButtonOnSearch]))
+                trackPlayingNotOnPlaylist = false;
+        }
+
+    if (trackPlayingNotOnPlaylist)
+        player->setMedia(0);
+
     updatePlaylist();
 
     QEventLoop loop;
