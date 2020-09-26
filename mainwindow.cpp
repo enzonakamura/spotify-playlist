@@ -198,6 +198,12 @@ void MainWindow::updatePlaylistIfEndOfMedia() {
                 }
 
         updatePlaylist();
+
+        for (int i=0; i<searchTracks.size(); i++)
+            if (player->media() == QMediaContent(QUrl(searchTracks[i]->url))) {
+                pauseToPlayButtonFromSearch((QPushButton*) searchPlayButtons->button(i));
+                break;
+            }
     }
 }
 
@@ -350,6 +356,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_searchButton_clicked()
 {
+    player->setMedia(0);
+    updatePlaylist();
+
     QEventLoop loop;
     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
     connect(manager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
