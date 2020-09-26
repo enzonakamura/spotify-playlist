@@ -73,6 +73,14 @@ void MainWindow::playedTrack() {
 
     if (player->mediaStatus() == player->NoMedia) {
         player->setMedia(QUrl(track->url));
+
+        if (searchTracks.size() > 0) {
+            foreach (QAbstractButton* playButton, searchPlayButtons->buttons()) {
+                int id = searchPlayButtons->id(playButton);
+                if (searchTracks[id]->name == track->name)
+                    playToPauseButtonFromSearch((QPushButton*) playButton);
+            }
+        }
     } else {
         if (!isTrackLoaded(track)) {
             player->setMedia(QUrl(track->url));
@@ -114,6 +122,14 @@ void MainWindow::playedTrackFromSearch() {
 
     if (player->mediaStatus() == player->NoMedia) {
         player->setMedia(QUrl(track->url));
+
+        if (playlistTracks.size() > 0) {
+            foreach (QAbstractButton* playButton, playlistPlayButtons->buttons()) {
+                int id = playlistPlayButtons->id(playButton);
+                if (playlistTracks[id]->name == track->name)
+                    playToPauseButton((QPushButton*) playButton);
+            }
+        }
     } else {
         if (!isTrackLoaded(track)) {
             player->setMedia(QUrl(track->url));
@@ -188,22 +204,34 @@ void MainWindow::pausedTrackFromSearch() {
 
 void MainWindow::updatePlaylistIfEndOfMedia() {
     if (player->mediaStatus() == player->EndOfMedia) {
-        if (ui->autoplay->checkState() != 0)
-            for (int i=0; i<playlistTracks.size(); i++)
-                if (player->media() == QMediaContent(QUrl(playlistTracks[i]->url))
-                    && i != playlistTracks.size() - 1) {
-                    player->setMedia(QUrl(playlistTracks[i+1]->url));
-                    player->play();
-                    break;
-                }
-
-        updatePlaylist();
-
         for (int i=0; i<searchTracks.size(); i++)
             if (player->media() == QMediaContent(QUrl(searchTracks[i]->url))) {
                 pauseToPlayButtonFromSearch((QPushButton*) searchPlayButtons->button(i));
                 break;
             }
+
+        if (ui->autoplay->checkState() != 0)
+            for (int i=0; i<playlistTracks.size(); i++)
+                if (player->media() == QMediaContent(QUrl(playlistTracks[i]->url))
+                    && i != playlistTracks.size() - 1) {
+                    player->setMedia(QUrl(playlistTracks[i+1]->url));
+
+                    if (searchTracks.size() > 0)
+                        foreach (QAbstractButton* playButton, searchPlayButtons->buttons()) {
+                            int idButtonOnSearch = searchPlayButtons->id(playButton);
+
+                            if (searchTracks[idButtonOnSearch]->name ==
+                                    playlistTracks[i+1]->name) {
+                                playToPauseButtonFromSearch((QPushButton*) playButton);
+                                break;
+                            }
+                        }
+
+                    player->play();
+                    break;
+                }
+
+        updatePlaylist();
     }
 }
 
@@ -300,6 +328,7 @@ void MainWindow::gotTracks(QNetworkReply *reply) {
         ui->searchTable->setCellWidget(i, 1, playButton);
 
         QPushButton *button = new QPushButton("+");
+        button->setToolTip("Add track to playlist");
         button->setStyleSheet("font-weight: bold");
 //        button->setFixedSize(25,25);
         searchAddButtons->addButton(button);
